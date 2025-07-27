@@ -7,5 +7,8 @@ load: build
 unload:
 	@sudo ip link set lo xdpgeneric off
 
-verify: load
+verify:
 	@ip link show dev lo | grep prog/xdp
+
+build_cli:
+	@go build -o bin/main app/main.go
