@@ -14,6 +14,13 @@ struct {
     __type(value, __u16);
 } blocked_port_map SEC(".maps");
 
+struct {
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, __u32);
+    __type(value, __u64);
+} drop_count_map SEC(".maps");
+
 SEC("xdp")
 int xdp_drop(struct xdp_md *ctx)
 {
@@ -39,6 +46,11 @@ int xdp_drop(struct xdp_md *ctx)
     }
 
     if (tcph->source == htons(*blocked_port) || tcph->dest == htons(*blocked_port)) {
+        __u32 key = 0;
+        __u64 *count = bpf_map_lookup_elem(&drop_count_map, &key);
+        if (count) {
+            __sync_fetch_and_add(count, 1);
+        }
         return XDP_DROP;
     }
 
